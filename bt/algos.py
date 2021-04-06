@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import sklearn.covariance
 from future.utils import iteritems
+from typing import Union
 
 import bt
 from bt.core import Algo, AlgoStack, SecurityBase, is_zero
@@ -1013,7 +1014,8 @@ class WeighEqually(Algo):
 class WeighSpecified(Algo):
 
     """
-    Sets temp['weights'] based on a provided dict of ticker:weights.
+    Sets temp['weights'] based on a provided dict of ticker:weights,
+    or with a pd.Series where the index corresponds to each ticker.
 
     Sets the weights based on pre-specified targets.
 
@@ -1025,9 +1027,12 @@ class WeighSpecified(Algo):
 
     """
 
-    def __init__(self, **weights):
+    def __init__(self, weights: Union[dict, pd.Series]):
         super(WeighSpecified, self).__init__()
-        self.weights = weights
+        if type(weights) is pd.Series:
+            self.weights = weights.to_dict()
+        else:
+            self.weights = weights
 
     def __call__(self, target):
         # added copy to make sure these are not overwritten
