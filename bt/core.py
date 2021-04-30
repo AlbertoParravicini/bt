@@ -83,7 +83,7 @@ class Node(object):
         # children helpers
         self.children = {}
         self._lazy_children = {}
-        self._universe_tickers = []
+        self._universe_tickers = None
         self._childrenv = []  # Shortcut to self.children.values()
 
         # strategy children helpers
@@ -138,7 +138,12 @@ class Node(object):
         Args:
             dc (bool): Whether or not to deepcopy nodes before adding them.
         """
-        if children is not None:
+        # if at least 1 children is specified
+        if children is not None and len(children) >= 1:
+            # initialize the universe tickers list, 
+            # which also identifies that we might have to filter the universe
+            if self._universe_tickers is None:
+                self._universe_tickers = []
             if isinstance(children, dict):
                 # Preserve the names from the dictionary by renaming the nodes
                 tmp = []
@@ -176,7 +181,7 @@ class Node(object):
 
                     self.children[c.name] = c
                     self._childrenv.append(c)
-
+                    
                 # if strategy, turn on flag and add name to list
                 # strategy children have special treatment
                 if isinstance(c, StrategyBase):
@@ -582,7 +587,10 @@ class StrategyBase(Node):
         # setup universe
         funiverse = universe
 
-        if self._universe_tickers:
+        # filter only if the list of universe tickers is defined, 
+        # otherwise it means we don't have any children and we use 
+        # the full universe
+        if self._universe_tickers is not None:
             # if we have universe_tickers defined, limit universe to
             # those tickers
             valid_filter = list(
@@ -596,7 +604,7 @@ class StrategyBase(Node):
             if self._has_strat_children:
                 for c in self._strat_children:
                     funiverse[c] = np.nan
-
+                    
             # must create to avoid pandas warning
             funiverse = pd.DataFrame(funiverse)
 
